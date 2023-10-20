@@ -1,3 +1,7 @@
+pub mod layers;
+use std::{rc::Rc, sync::Arc};
+
+use layers::{capture_layer::CaptureLayer, grayscale_layer::GrayscaleLayer, bilateral_layer::BilateralLayer, lut_layer::LutLayer, canny_layer::CannyLayer, layer::Layer};
 use opencv::{highgui, videoio,  prelude::*, imgproc::{self, LINE_8}, core::{Scalar, Vector, Rect, Size, convert_scale_abs, KeyPoint, DMatch, NORM_HAMMING, Point, BORDER_DEFAULT, lut, Vec2i, CV_8U, Size2i}, objdetect::CascadeClassifier, imgcodecs::IMREAD_GRAYSCALE, features2d::{SIFT, BFMatcher, draw_matches_knn, DrawMatchesFlags, ORB, ORB_ScoreType, draw_matches},};
 
 // fn main() -> Result<(), String> {
@@ -234,8 +238,6 @@ fn contours_matching() -> Result<(), String> {
         .map_err(|err| format!("[main] failed to capture video from  main camera: {err}"))?;
     capture.set(videoio::CAP_PROP_FPS, 30f64)
         .map_err(|err| format!("[main] failed to set fps cap: {err}"))?;
-    let mut frame = Mat::default();
-    let mut grayscale_frame = Mat::default();
     let grayscale_template = opencv::imgcodecs::imread("/home/minyewoo/Development/opencv-object-detector/templates/bold.jpg", IMREAD_GRAYSCALE)
         .map_err(|err| format!("[main] template read: {err}"))?;
     let mut edges = Mat::default();
@@ -251,26 +253,36 @@ fn contours_matching() -> Result<(), String> {
     let mut template_hu_moments: [f64; 7] = Default::default();
     imgproc::hu_moments(template_moments, &mut template_hu_moments)
         .map_err(|err| format!("[main] template hu_moments: {err}"))?;
-    let mut frame_smoothed = Mat::default();
-    let mut contrast_grayscale = Mat::default();
     let mut look_up_table = Mat::default();
+
     make_look_up_table(&mut look_up_table, 0.5)?;
+    let rc_look_up_table = Rc::new(look_up_table);
+    let mut frame_pipeline = CannyLayer::new(
+        Box::new(
+            BilateralLayer::new(
+                Box::new(
+                    LutLayer::new(
+                        Box::new(
+                            GrayscaleLayer::new(
+                                Box::new(CaptureLayer::new())
+                            ),
+                        ),
+                        rc_look_up_table.clone(),
+                    )
+                ),
+                5, 
+                75.0, 
+                75.0,
+            ),
+        ), 
+        70.0, 
+        20.0, 
+        3,
+    );
     loop {
-        capture.read(&mut frame)
-            .map_err(|err| format!("[main] failed to read a frame from VideoCaprute: {err}"))?;
-        imgproc::cvt_color(&frame, &mut grayscale_frame, imgproc::COLOR_BGR2GRAY, 0)
-            .map_err(|err: opencv::Error| format!("[main] failed to convert frame to grayscale: {err}"))?;
-        // convert_scale_abs(&grayscale_frame, &mut contrast_grayscale, 0.5, 10.0).map_err(|err| format!("[main] convert_scale_abs: {err}"))?;
-        lut(&grayscale_frame, &look_up_table, &mut contrast_grayscale)
-            .map_err(|err: opencv::Error| format!("[main] lut: {err}"))?;
-        // imgproc::gaussian_blur(&contrast_grayscale, &mut frame_smoothed, Size2i::new(3, 3), 2.0, 2.0, BORDER_DEFAULT)
-        //     .map_err(|err| format!("[main] gaussian_blur: {err}"))?;
-        imgproc::bilateral_filter(&contrast_grayscale, &mut frame_smoothed, 5, 75.0, 75.0, BORDER_DEFAULT)
-            .map_err(|err| format!("[main] bilateral_filter: {err}"))?;
-        imgproc::canny(&frame_smoothed, &mut edges, 70.0, 200.0, 3, false)
-            .map_err(|err| format!("[main] canny: {err}"))?;
-        let mut contours = Vector::<Vector<Point>>::default();
-        imgproc::find_contours(&edges, &mut contours, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE, Point::default())
+        let mut frame_arc = frame_pipeline.process()?;
+        let frame = Arc::get_mut(&mut frame_arc).unwrap();
+        imgproc::find_contours(frame, &mut contours, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE, Point::default())
             .map_err(|err| format!("[main] find_contours: {err}"))?;
         let matched_contour = contours
             .iter()
@@ -299,10 +311,10 @@ fn contours_matching() -> Result<(), String> {
         if matched_contour.len() > 0 {
             let mut matched_contours = Vector::<Vector<Point>>::default();
             matched_contours.push(matched_contour);
-            imgproc::draw_contours(&mut frame, &matched_contours, -1, Scalar::new(0.0, 255.0, 0.0, 255.0), 2, LINE_8, &Mat::default(), 0, Point::new(0, 0))
+            imgproc::draw_contours(frame, &matched_contours, -1, Scalar::new(0.0, 255.0, 0.0, 255.0), 2, LINE_8, &Mat::default(), 0, Point::new(0, 0))
                 .map_err(|err| format!("[main] draw_contours: {err}"))?;
         }
-        highgui::imshow(name, &frame)
+        highgui::imshow(name, frame)
             .map_err(|err| format!("[main] failed to display an image in the window: {err}"))?;
         let key = highgui::wait_key(1)
             .map_err(|err| format!("[main] highgui::wait_key error: {err}"))?;
