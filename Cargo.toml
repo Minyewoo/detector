@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 opencv = "0.83.0"
+linfa-clustering = "0.7.0"
+linfa = "0.7.0"
