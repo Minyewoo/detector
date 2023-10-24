@@ -2,20 +2,20 @@ use std::rc::Rc;
 use opencv::{prelude::Mat, imgproc, core::BORDER_DEFAULT};
 use super::layer::Layer;
 
-pub struct BilateralLayer {
+pub struct BilateralFiltering {
     layer: Box<dyn Layer>,
     d: i32,
     sigma_color: f64,
     sigma_space: f64,
 }
 
-impl BilateralLayer {
+impl BilateralFiltering {
     pub fn new(layer: Box<dyn Layer>, d: i32, sigma_color: f64, sigma_space: f64) -> Self {
-        BilateralLayer { layer, d, sigma_color, sigma_space }
+        BilateralFiltering { layer, d, sigma_color, sigma_space }
     }
 }
 
-impl Layer for BilateralLayer {
+impl Layer for BilateralFiltering {
     fn process(&mut self) -> Result<Rc<Mat>, String> {
         match self.layer.process() {
             Ok(frame) => {

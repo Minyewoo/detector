@@ -1,6 +1,6 @@
 pub mod layers;
 use std::rc::Rc;
-use layers::{capture_layer::CaptureLayer, grayscale_layer::GrayscaleLayer, bilateral_layer::BilateralLayer, lut_layer::LutLayer, canny_layer::CannyLayer, layer::Layer};
+use layers::{capture::Capture, grayscale::Grayscale, bilateral_filtering::BilateralFiltering, gamma_correction::GammaCorrection, canny_edge_detection::CannyEdgeDetection, layer::Layer};
 use opencv::{highgui, prelude::*, imgproc::{self, LINE_8}, core::{Scalar, Vector, Point, CV_8U}, imgcodecs::IMREAD_GRAYSCALE, videoio::{self, CAP_PROP_FPS},};
 
 fn contours_matching() -> Result<(), String> {
@@ -29,24 +29,23 @@ fn contours_matching() -> Result<(), String> {
     let mut capture = videoio::VideoCapture::new(0, videoio::CAP_ANY)
             .map_err(|err| format!("[main] failed to capture video from  main camera: {err}")).unwrap();
     capture.set(CAP_PROP_FPS, 30.0).unwrap();
-    let capture_box = Box::new(capture);
     let mut frame_pipeline = 
-    CannyLayer::new(
+    CannyEdgeDetection::new(
         Box::new(
-            BilateralLayer::new(
+            BilateralFiltering::new(
                 Box::new(
-                    LutLayer::new(
+                    GammaCorrection::new(
                         Box::new(
-                            GrayscaleLayer::new(
+                            Grayscale::new(
                                 Box::new(
-                                    CaptureLayer::new(
-                                        capture_box
+                                    Capture::new(
+                                        Box::new(capture)
                                     ),
                                 )
                             ),
                         ),
                         rc_look_up_table.clone(),
-                    )
+                    ),
                 ),
                 5, 
                 75.0, 
@@ -58,7 +57,6 @@ fn contours_matching() -> Result<(), String> {
         3,
     );
     loop {
-        let mut colored_frame = Mat::default();
         let mut frame_rc = frame_pipeline.process()?;
         let frame = Rc::get_mut(&mut frame_rc).unwrap();
         imgproc::find_contours(frame, &mut contours, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE, Point::default())

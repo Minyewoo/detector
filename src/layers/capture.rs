@@ -2,19 +2,19 @@ use std::rc::Rc;
 use opencv::{prelude::Mat, videoio::{VideoCapture, VideoCaptureTrait}};
 use super::layer::Layer;
 
-pub struct CaptureLayer {
+pub struct Capture {
     capture: Box<VideoCapture>,
 }
 
-impl CaptureLayer {
+impl Capture {
     pub fn new(capture: Box<VideoCapture>) -> Self {
-        CaptureLayer { 
+        Capture { 
             capture
         }
     }
 }
 
-impl Layer for CaptureLayer {
+impl Layer for Capture {
     fn process(&mut self) -> Result<Rc<Mat>, String> {
         let mut frame = Mat::default();
         self.capture.read(&mut frame)

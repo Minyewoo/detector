@@ -2,17 +2,17 @@ use std::rc::Rc;
 use opencv::{prelude::Mat, imgproc};
 use super::layer::Layer;
 
-pub struct GrayscaleLayer {
+pub struct Grayscale {
     layer: Box<dyn Layer>,
 }
 
-impl GrayscaleLayer {
+impl Grayscale {
     pub fn new(layer: Box<dyn Layer>) -> Self {
-        GrayscaleLayer { layer }
+        Grayscale { layer }
     }
 }
 
-impl Layer for GrayscaleLayer {
+impl Layer for Grayscale {
     fn process(&mut self) -> Result<Rc<Mat>, String> {
         match self.layer.process() {
             Ok(frame) => {

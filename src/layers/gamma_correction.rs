@@ -2,18 +2,18 @@ use std::rc::Rc;
 use opencv::{prelude::Mat, core::lut};
 use super::layer::Layer;
 
-pub struct LutLayer {
+pub struct GammaCorrection {
     layer: Box<dyn Layer>,
     look_up_table: Rc<Mat>
 }
 
-impl LutLayer {
+impl GammaCorrection {
     pub fn new(layer: Box<dyn Layer>, look_up_table: Rc<Mat>) -> Self {
-        LutLayer { layer, look_up_table }
+        GammaCorrection { layer, look_up_table }
     }
 }
 
-impl Layer for LutLayer {
+impl Layer for GammaCorrection {
     fn process(&mut self) -> Result<Rc<Mat>, String> {
         match self.layer.process() {
             Ok(frame) => {
