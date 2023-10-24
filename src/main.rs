@@ -234,10 +234,6 @@ fn contours_matching() -> Result<(), String> {
     let name = "test";
     highgui::named_window(name, highgui::WINDOW_GUI_NORMAL | highgui::WINDOW_KEEPRATIO | highgui::WINDOW_AUTOSIZE)
         .map_err(|err| format!("[main] failed to create window: {err}"))?;
-    let mut capture = videoio::VideoCapture::new(0, videoio::CAP_ANY)
-        .map_err(|err| format!("[main] failed to capture video from  main camera: {err}"))?;
-    capture.set(videoio::CAP_PROP_FPS, 30f64)
-        .map_err(|err| format!("[main] failed to set fps cap: {err}"))?;
     let grayscale_template = opencv::imgcodecs::imread("/home/minyewoo/Development/opencv-object-detector/templates/bold.jpg", IMREAD_GRAYSCALE)
         .map_err(|err| format!("[main] template read: {err}"))?;
     let mut edges = Mat::default();
