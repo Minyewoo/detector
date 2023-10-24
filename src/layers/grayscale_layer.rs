@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 use opencv::{prelude::Mat, imgproc};
 use super::layer::Layer;
 
@@ -13,13 +13,13 @@ impl GrayscaleLayer {
 }
 
 impl Layer for GrayscaleLayer {
-    fn process(&mut self) -> Result<Arc<Mat>, String> {
+    fn process(&mut self) -> Result<Rc<Mat>, String> {
         match self.layer.process() {
             Ok(frame) => {
                 let mut grayscale_frame = Mat::default();
                 imgproc::cvt_color(frame.as_ref(), &mut grayscale_frame, imgproc::COLOR_BGR2GRAY, 0)
                     .map_err(|err: opencv::Error| format!("[GrayscaleLayer] cvt_color: {err}"))?;
-                Ok(Arc::new(grayscale_frame))
+                Ok(Rc::new(grayscale_frame))
             },
             Err(error) => Err(error),
         }

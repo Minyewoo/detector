@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 use opencv::{prelude::Mat, imgproc, core::BORDER_DEFAULT};
 use super::layer::Layer;
 
@@ -16,13 +16,13 @@ impl BilateralLayer {
 }
 
 impl Layer for BilateralLayer {
-    fn process(&mut self) -> Result<Arc<Mat>, String> {
+    fn process(&mut self) -> Result<Rc<Mat>, String> {
         match self.layer.process() {
             Ok(frame) => {
                 let mut smoothed_frame = Mat::default();
                 imgproc::bilateral_filter(frame.as_ref(), &mut smoothed_frame, self.d, self.sigma_color, self.sigma_space, BORDER_DEFAULT)
                     .map_err(|err| format!("[BilateralLayer] bilateral_filter: {err}"))?;
-                Ok(Arc::new(smoothed_frame))
+                Ok(Rc::new(smoothed_frame))
             },
             Err(error) => Err(error),
         }
