@@ -101,6 +101,7 @@ dependencies = [
  "linfa",
  "linfa-clustering",
  "opencv",
+ "simpler_timer",
 ]
 
 [[package]]
@@ -553,6 +554,12 @@ name = "shlex"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
+
+[[package]]
+name = "simpler_timer"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f184f9034c7ca87b89697380a6e082b77313ce7887db5f8cf75256a27df00571"
 
 [[package]]
 name = "smallvec"
